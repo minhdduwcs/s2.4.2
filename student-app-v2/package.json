@@ -16,6 +16,8 @@
     "envcloak": "^0.2.1",
     "joi": "^17.6.0",
     "liberica": "^0.3.2",
+    "moment": "^2.29.3",
+    "moment-timezone": "^0.5.34",
     "mongoose": "^6.3.5",
     "path": "^0.12.7",
     "slugify": "^1.6.5"

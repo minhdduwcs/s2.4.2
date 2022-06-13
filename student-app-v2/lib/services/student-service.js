@@ -3,29 +3,68 @@
 const Devebot = require('devebot');
 const Promise = Devebot.require('bluebird');
 const lodash = Devebot.require('lodash');
+const moment = require('moment-timezone');
 const slugify = require('slugify');
 const Joi = require('joi');
 
+const constants = require('../utils/constants');
+const { slugifyString } = require('../utils/string-util');
+const { defaultSchema } = require('../utils/joi-util');
+const logHelper = new (require('../utils/log-helper'))();
+
 function Service(params = {}) {
-  const { dataManipulator, errorBuilder } = params;
+  const {
+    loggingFactory,
+    dataManipulator,
+    errorBuilder
+  } = params;
+
+  const L = loggingFactory.getLogger();
+  const T = loggingFactory.getTracer();
+  logHelper.add(L, T);
 
   this.createStudent = async function (args, opts = {}) {
+    const { requestId } = opts;
     try {
-      await this.validateStudent(args);
-      
-      // Create
-      const slugName = slugifyName(args.firstName, args.lastName)
-      lodash.set(args, "slug", slugName);
+      let schema = lodash.cloneDeep(defaultSchema);
+      schema = schema.append({
+        firstName: Joi.string()
+          .required(),
+        lastName: Joi.string()
+          .required(),
+        email: Joi.string()
+          .required()
+          .external(validateEmailIsUnique(args)),
+        phoneNumber: Joi.string()
+          .required(),
+          // .external(),
+        rank: Joi.string()
+          .required(),
+      });
 
-      return dataManipulator.create({ type: 'StudentModel', data: args });
+      // load validated data
+      const validatedData = await schema.validateAsync(args, {
+        stripUnknown: true
+      });
 
-    } catch (error) {
-        throw errorBuilder.newError('GeneralError', {
-          payload: { 
-            message: error.message,
-            args 
-          },
-        });
+      const ctx = loadContext(validatedData);
+      let resData = await upsertStudent(validatedData, ctx);
+
+      // convert response data
+      if (!lodash.isNil(resData)) {
+        resData = resData.toJSON();
+        resData.id = resData._id.toString();
+        delete resData._id;
+      }
+
+      return resData;
+    } catch (err) {
+      logHelper.log(
+        { requestId, err: err.message },
+        'Req[${requestId}], function createStudent has failed with error[${err}]',
+        'error'
+      );
+      return Promise.reject(err);
     } 
   };
 
@@ -133,6 +172,74 @@ function Service(params = {}) {
       throw new Error(error);
     }
   }
+
+  function validateEmailIsUnique(args) {
+    return async email => {
+      const record = await dataManipulator.findOne({
+        type: 'StudentModel',
+        query: {
+          _id: { $ne: lodash.get(args, 'id') },
+          email: {
+            $regex: `^${email}$`,
+            $options: 'i'
+          }
+        }
+      });
+      if (!lodash.isNil(record)) {
+        return Promise.reject(
+          errorBuilder.newError('StudentService_Email_Unique')
+        );
+      }
+    }
+  }
+
+  async function upsertStudent(updateData, ctx) {
+    const studentId = lodash.get(updateData, 'id');
+    const { dataTag, holderId, now } = ctx;
+
+    // add slug field
+    const firstName = lodash.get(updateData, 'firstName');
+    const lastName = lodash.get(updateData, 'lastName');
+    if (lodash.isString(firstName) && lodash.isString(lastName)) {
+      const slug = slugifyString(`${lastName} ${firstName}`);
+      lodash.set(updateData, 'slug', slug);
+    }
+
+    if (lodash.isString(studentId)) {
+      return dataManipulator.findOneAndUpdate({
+        type: 'StudentModel',
+        query: {
+          _id: studentId
+        },
+        update: {
+          ...updateData,
+          tags: dataTag,
+          updatedAt: now,
+          updatedBy: holderId
+        }
+      })
+    } else {
+      return dataManipulator.create({
+        type: 'StudentModel',
+        data: {
+          ...updateData,
+          tags: dataTag,
+          createdAt: now,
+          updatedAt: now,
+          createdBy: holderId,
+          updatedBy: holderId
+        }
+      });
+    }
+  }
+}
+
+function loadContext(args) {
+  const dataTag = lodash.get(args, 'dataTag');
+  const holderId = lodash.get(args, 'holderId');
+  const timezone = lodash.get(args, 'timezone', constants.TIMEZONE_DEFAULT);
+  const now = moment.tz(timezone);
+  return { dataTag, holderId, timezone, now };
 }
 
 const slugifyName = (firstName, lastName) => {
@@ -144,7 +251,6 @@ const slugifyName = (firstName, lastName) => {
   })
   return slugName;
 }
-
 
 Service.referenceHash = {
   dataManipulator: 'app-datastore/dataManipulator',

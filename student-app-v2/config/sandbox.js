@@ -10,23 +10,23 @@ const config = {
   },
   plugins: {
     appRestfront:{
-			contextPath: '/api',
-			mappingStore: {
-				intro: path.join(__dirname, '../lib/mappings/restfront'),
-			},
+      contextPath: '/api',
+      mappingStore: {
+        intro: path.join(__dirname, '../lib/mappings/restfront'),
+      },
     },
     appDatastore: {
-			mappingStore: {
-				'student-datastore': path.join(__dirname, '../lib/mappings/datastore'),
-			},
+      mappingStore: {
+        'student-datastore': path.join(__dirname, '../lib/mappings/datastore'),
+      },
     },
     appWebweaver: {
       cors: {
-				enabled: true,
-				mode: 'simple',
-			},
+        enabled: true,
+        mode: 'simple',
+      },
     },
-		appWebserver: {
+    appWebserver: {
       host: '0.0.0.0',
       port: 7979,
       verbose: true,
@@ -37,16 +37,9 @@ const config = {
       appDatastore:{
         manipulator: {
           connection_options: {
-            // host: '172.17.0.2',
-            // port: '27017',
-            // name: 'student-v2',
-            host: process.env['appDatastore_mongoose_manipulator_host'] || 
-            '172.17.0.2',
-            port: process.env['appDatastore_mongoose_manipulator_port'] || 
-            '27017',
-            name: process.env['appDatastore_mongoose_manipulator_db'] ||
-            'student-v2'
-            // 'student-test'
+            host: process.env['appDatastore_mongoose_manipulator_host'] || '0.0.0.0',
+            port: process.env['appDatastore_mongoose_manipulator_port'] || '27017',
+            name: process.env['appDatastore_mongoose_manipulator_db'] || 'student-db'
           },
         },
       },

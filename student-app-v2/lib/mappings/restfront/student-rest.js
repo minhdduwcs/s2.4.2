@@ -1,7 +1,10 @@
 'use strict';
 
+const Devebot = require('devebot');
+const lodash = Devebot.require('lodash');
+
 module.exports = [
-  // Create
+  // POST /students
   {
     path: '/students',
     method: 'POST',
@@ -14,12 +17,17 @@ module.exports = [
           lastName: req.body.lastName,
           phoneNumber: req.body.phoneNumber,
           email: req.body.email,
-          ranked: req.body.ranked,
+          rank: req.body.rank,
+          dataTag: req.headers.datatag,
+          timezone: req.headers.timezone || constants.TIMEZONE_DEFAULT,
+          holderId: lodash.isNil(req.accessToken)
+            ? 'can-not-get-holderId'
+            : req.accessToken.holderId
         };
       },
     },
   },
-  // Read
+  // GET /students
   {
     path: '/students',
     method: 'GET',
@@ -33,7 +41,7 @@ module.exports = [
       },
     },
   },
-  // Read by id
+  // GET /students/:id
   {
     path: '/students/:id',
     method: 'GET',
@@ -47,7 +55,7 @@ module.exports = [
       },
     },
   },
-  // Update
+  // PUT /students/:id
   {
     path: '/students/:id',
     method: 'PUT',
@@ -66,7 +74,7 @@ module.exports = [
       },
     },
   },
-  // Delete
+  // DELETE /students/:id
   {
     path: '/students/:id',
     method: 'DELETE',
