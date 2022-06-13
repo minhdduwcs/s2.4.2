@@ -1,0 +1,28 @@
+{
+  "name": "student-app-v2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "app-datastore": "^0.3.7",
+    "app-errorlist": "^0.3.5",
+    "app-restfront": "^0.3.11",
+    "devebot": "^0.3.3",
+    "envcloak": "^0.2.1",
+    "joi": "^17.6.0",
+    "liberica": "^0.3.2",
+    "mongoose": "^6.3.5",
+    "path": "^0.12.7",
+    "slugify": "^1.6.5"
+  },
+  "devDependencies": {
+    "chai": "^4.3.6",
+    "chai-as-promised": "^7.1.1",
+    "mocha": "^10.0.0"
+  }
+}
