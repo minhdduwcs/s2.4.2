@@ -1,0 +1,12 @@
+# app-datastore
+## dataManipulator
+### query
+- find()
+- count()
+- findOne()
+### read
+- get()
+### modify
+- create()
+- update()
+- delete()
